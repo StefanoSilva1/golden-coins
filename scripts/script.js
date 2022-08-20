@@ -1,6 +1,7 @@
 const myGameArea = {
     canvas: document.createElement('canvas'),
   frames: 0,
+  points : 0,
     start: function () {
       this.canvas.width = 480;
       this.canvas.height = 270;
@@ -19,18 +20,16 @@ const myGameArea = {
         clearInterval(this.interval);
       },
 
-    score: function () {
-        let points = 0;
-        points += coinsCollected;
+    drawScore: function () {                
         this.context.font = '18px serif';
         this.context.fillStyle = 'black';
-        this.context.fillText(`Score: ${points}`, 350, 50);
+        this.context.fillText(`Score: ${this.points}`, 350, 50);
       },
 
 };
 
   class Component {
-    constructor(width, height, color, x, y) {
+    constructor(width, height, color, x, y, imgSource = null) {
       this.width = width;
       this.height = height;
       this.color = color;
@@ -38,18 +37,43 @@ const myGameArea = {
       this.y = y;
       this.speedX = 0;
       this.speedY = 0;
+      if (!imgSource){
+        this.image = null
+      } else {
+        this.image = new Image()
+      this.image.src = imgSource
+      }
+      
+     
     
       
 }
 newPos() {
     this.x += this.speedX;
     this.y += this.speedY;
+    if (this.x <= 0 ){
+        this.x = 0;
+    } else if (this.x >= 450){
+        this.x = 450;
+    }
+    
+    if (this.y <= 0){
+        this.y = 0;
+    } else if (this.y >= 240){
+        this.y = 240;
+    }
+
 }
    
     update() {
       const ctx = myGameArea.context;
-      ctx.fillStyle = this.color;
+      if (!this.image){
+        ctx.fillStyle = this.color;
       ctx.fillRect(this.x, this.y, this.width, this.height);
+      } else {
+        ctx.drawImage(this.image, this.x, this.y, this.width, this.height)
+      }
+      
     }
 
     left() {
@@ -73,12 +97,11 @@ newPos() {
         return !(this.bottom() < obstacle.top() || this.top() > obstacle.bottom() || this.right() < obstacle.left() || this.left() > obstacle.right());
       }
 
-      collected (goldenCoins){
-        return !(this.bottom() < goldenCoins.top() || this.top() > goldenCoins.bottom() || this.right() < goldenCoins.left() || this.left() > goldenCoins.right());
-      }
+    
+      
   }
 
-  const player = new Component(30, 30, 'red', 240, 235);
+  const player = new Component(30, 30, 'red', 240, 235, './Images/chicken-sprite.png');
 
 
   document.addEventListener('keydown', (e) => {
@@ -103,11 +126,10 @@ newPos() {
     player.speedY = 0;
   });
 
-  let randomH = Math.floor(Math.random() * (myGameArea.canvas.width));
+  let randomW = Math.floor(Math.random() * (myGameArea.canvas.width - 10));
 
-  let randomW = Math.floor(Math.random() * (myGameArea.canvas.height));
+  let randomH = Math.floor(Math.random() * (myGameArea.canvas.height - 10));
 
-  let coinsCollected = 0;
 
   let goldenCoins = new Component(10, 10, 'yellow', randomW, randomH);
 
@@ -165,13 +187,30 @@ newPos() {
   }
 
 
+  function checkCollection() { 
+    let collecteds =  player.crashWith(goldenCoins);
+    if (collecteds) {
+        myGameArea.points += 100;
+        let randomW = Math.floor(Math.random() * (myGameArea.canvas.width - 10));
+        let randomH = Math.floor(Math.random() * (myGameArea.canvas.height - 10));
+        goldenCoins.x = randomW;
+        goldenCoins.y = randomH;
+
+      }
+    
+   
+    
+}
+
+  
+
   function checkGameOver() {
     const crashed = myRObstacles.some(function (obstacle) {
       return player.crashWith(obstacle);
     });
    
     if (crashed) {
-      myGameArea.score();
+      myGameArea.stop();
     }
 
     const crashed2 = myRObstacles2.some(function (obstacle) {
@@ -208,7 +247,8 @@ newPos() {
     updateObstacles();
     checkGameOver();
     goldenCoins.update();
-    myGameArea.score();
+    checkCollection()
+    myGameArea.drawScore();
     
   }
 
